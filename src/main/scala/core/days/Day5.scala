@@ -18,15 +18,19 @@ object Day5 {
     [-][D][-]
      contentRows(0).replaceAll("    ", "-").padTo(newPadding + 3 * maxContentRowLength , "-").mkString.replaceAll("-", "[-]")
      */
+    // TODO: fix parsing, I had to manually add the " - " in the input to make it work for the real input. Most likely not working because of the 4 spaces replace.
+    // It only works for the `example.txt`
     val paddedContent = contentRows.map(s => {
-      val leftReplace = s.replaceAll("    ", "-")
-      val padIndexStart = leftReplace.length + 1
+//      val leftReplace = s.replaceAll("    ", "-")
+      val padIndexStart = s.length + 1
       val replaceTo =
         if (padIndexStart < maxContentRowLength * 4) padIndexStart else 0
-      val leftPad = leftReplace.padTo(replaceTo, '-')
-      val newRow = leftPad.mkString.replaceAll("-", "[-]")
+//      val leftPad = s.padTo(replaceTo, '-')
+      val newRow = s.mkString.replaceAll("-", "[-]")
       newRow.replaceAll(" ", "")
     })
+
+//    println(paddedContent.mkString("\n"))
 
     paddedContent
 
@@ -43,15 +47,15 @@ object Day5 {
       strings: Array[String]
   ): Map[Int, mutable.Stack[String]] = {
 
-    val indexRow = strings.length - 1
-    val contentRows = strings.splitAt(indexRow)._1
-    // TODO: investigate why contentRows.max does not work all the time
-    val maxContentRowLength =
-      contentRows(indexRow - 1).split(" ").count(_.nonEmpty)
+//    val indexRow = strings.length - 1
+//    val contentRows = strings.splitAt(indexRow)._1
+//    // TODO: investigate why contentRows.max does not work all the time
+//    val maxContentRowLength =
+//      contentRows(indexRow - 1).split(" ").count(_.nonEmpty)
 
     var map = Map[Int, mutable.Stack[String]]()
     val content = getStacksContent(strings)
-    println(content.mkString("\n"))
+//    println(content.mkString("\n"))
     val indices = getStacksIndices(strings)
     indices.foreach(i => map = map + (i -> new mutable.Stack()))
     content.zipWithIndex.foreach {
@@ -88,7 +92,7 @@ object Day5 {
   ): Map[Int, mutable.Stack[String]] = {
     moves.foreach(m => {
       val (numberOfMoves, from, to) = parseMove(m)
-      println(numberOfMoves, from, to)
+//      println(numberOfMoves, from, to)
 
       for (i <- 0 until numberOfMoves) {
 //        println(s"----${i}")
@@ -106,23 +110,71 @@ object Day5 {
     mapping
   }
 
-  def part1(): Unit = {
+  def part1(): String = {
     val input = InputReader.read("day5/input.txt").split("\n\n")
     val (stacks, moves) = input.splitAt(1)
 //     create FIFOS
     val mapping = createStacksMapping(stacks.head.split("\n"))
-    println(mapping.mkString("\n"))
-    val mappingAfterMoves = makeMoves(mapping, moves.head.split("\n"))
-    println(mappingAfterMoves.mkString("\n"))
+//    println(mapping.mkString("\n"))
+    val mappingAfterMoves =
+      makeMoves(mapping, moves.head.split("\n")).toSeq.sortBy(_._1)
+//    println(mappingAfterMoves.mkString("\n"))
     val topCrates = mappingAfterMoves
       .map(m => m._2(0).replaceAll("\\[", "").replaceAll("\\]", ""))
       .mkString
-    println(topCrates)
-//    assert(topCrates == "[C][M][Z]")
+    topCrates
+//    println(topCrates)
+//    assert(topCrates == "CMZ")
 
   }
 
-  def part2(): Unit = {}
+  private def makeMovesCrateMover9000(
+      mapping: Map[Int, mutable.Stack[String]],
+      moves: Array[String]
+  ): Map[Int, mutable.Stack[String]] = {
+    moves.foreach(m => {
+      val (numberOfMoves, from, to) = parseMove(m)
+      //      println(numberOfMoves, from, to)
+
+      var itemsToMove = Seq[String]()
+      for (i <- 0 until numberOfMoves) {
+//        println(s"----${i}")
+        val fromQueue = mapping(from)
+        if (fromQueue.nonEmpty) {
+          val toMove = fromQueue.pop()
+//          println(toMove)
+          itemsToMove = itemsToMove :+ toMove
+        }
+
+      }
+      itemsToMove.reverse.foreach(itm => {
+        val toQueue = mapping(to)
+        toQueue.prepend(itm)
+      })
+
+//      println(mapping.mkString("\n"))
+
+    })
+    mapping
+  }
+
+  def part2(): String = {
+    val input = InputReader.read("day5/input.txt").split("\n\n")
+    val (stacks, moves) = input.splitAt(1)
+    //     create FIFOS
+    val mapping = createStacksMapping(stacks.head.split("\n"))
+//    println(mapping.mkString("\n"))
+    val mappingAfterMoves =
+      makeMovesCrateMover9000(mapping, moves.head.split("\n")).toSeq
+        .sortBy(_._1)
+//    println(mappingAfterMoves.mkString("\n"))
+    val topCrates = mappingAfterMoves
+      .map(m => m._2(0).replaceAll("\\[", "").replaceAll("\\]", ""))
+      .mkString
+//    println(topCrates)
+    //    assert(topCrates == "MCD")
+    topCrates
+  }
 
   def main(args: Array[String]): Unit = {
     println("Part1")
